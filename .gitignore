@@ -1,0 +1,5 @@
+# Tot lo de vs code
+.vscode/*
+.venv/*
+.venv
+TOKEN.txt
