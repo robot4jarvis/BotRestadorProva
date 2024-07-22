@@ -147,27 +147,34 @@ async def lsAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
 
 async def msg(update:Update, context: ContextTypes.DEFAULT_TYPE):
-    if not(update.effective_chat.id in aliasesDict): textMess = "No hi ha cap àlies configurat per a aquest grup.\nAbans d'enviar un missatge, afegeix-ne un amb '/addAlias.\nPer a més informació, fes servir /help."
-    else: 
-        if context.args.__len__()<2: textMess = "Format incorrecte. Fes servir:\n   /msg alies text\nsubstituint 'alies' pel destinatari"
-        else:
-            now = datetime.now()
-            textRebut = update.message.text.strip()
-            textRebut = textRebut[textRebut.find(" "):].strip() #Eliminem el comandament
-            aliesDestinatari = textRebut[0:textRebut.find(" ")].strip() #agafem la primera paraula (el destinatari)
-            aliesRemitent = aliasesDict[update.effective_chat.id]
-            textRebut = textRebut[textRebut.find(" "):].strip() # Eliminem el destinatari
-            print(aliesDestinatari)
-            print(textRebut)
-            header = "Missatge de {} per a {}: \n\n ".format(str(aliesRemitent[0]), aliesDestinatari)
-            foot = "\n\nFirmat: {} el {} a les {}.".format(update.effective_sender.name, now.strftime('%d/%m/%y'), now.strftime('%H:%M:%S'))
-            
-            textMess = header + textRebut + foot
-            
-            IDestinatari = getGroupID(aliesDestinatari)
-            if IDestinatari == -1: textMess = "Aquest àlies no està enregistrat! Fes servir '/lsAlias' per a veure quins existeixen" # Error!
-            else:
-                await context.bot.send_message(chat_id=IDestinatari, text = textMess) # Enviem el missatge al destinatari
+    if not(update.effective_chat.id in aliasesDict): # Comprovem que el remitent té un àlies
+        textMess = "No hi ha cap àlies configurat per a aquest grup.\nAbans d'enviar un missatge, afegeix-ne un amb '/addAlias.\nPer a més informació, fes servir /help."
+        await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
+        return # Acabem això
+    if context.args.__len__()<2: # Comprovem que s'ha introduït remitent i missatge
+        textMess = "Format incorrecte. Fes servir:\n   /msg alies text\nsubstituint 'alies' pel destinatari"
+        await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
+        return
+    
+    # Processem el text rebut per a obtenir el cos del missatge i l'àlies del destinatari
+    textRebut = update.message.text.strip()
+    textRebut = textRebut[textRebut.find(" "):].strip() #Eliminem el comandament
+    aliesDestinatari = textRebut[0:textRebut.find(" ")].strip() #agafem la primera paraula (el destinatari)
+    aliesRemitent = aliasesDict[update.effective_chat.id]
+    cos = textRebut[textRebut.find(" "):].strip() # Eliminem el destinatari, ens queda el cos
+
+    IDestinatari = getGroupID(aliesDestinatari)
+    if IDestinatari == -1: # Comprovem que el destinatari existeix
+        textMess = "Aquest àlies no està enregistrat! Fes servir '/lsAlias' per a veure quins existeixen" # Error!
+        await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
+        return
+    
+    # Si tot va bé, "montam" el missatge i l'enviem
+    now = datetime.now()
+    header = "Missatge de {} per a {}: \n\n ".format(str(aliesRemitent[0]), aliesDestinatari)
+    foot = "\n\nFirmat: {} el {} a les {}.".format(update.effective_sender.name, now.strftime('%d/%m/%y'), now.strftime('%H:%M:%S'))
+    textMess = header + cos + foot
+    await context.bot.send_message(chat_id=IDestinatari, text = textMess) # Enviem el missatge al destinatari
     await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess) # En qualsevol cas, avissem al remitent
 
     
