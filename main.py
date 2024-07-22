@@ -55,15 +55,15 @@ def validAlias(aliasList):
         
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     textMess1 = """Hola! Benvingut al SplitBot, el bot restador de proves per a la Telecogresca.
-    Ara per ara, només té una sola funció: enviar missatges directes a altres grups.
-    No obstant, estigueu atents, perquè arribaran més eines per a poder sumar i restar al Telegram!"""
+Ara per ara, només té una sola funció: enviar missatges directes a altres grups.
+No obstant, estigueu atents, perquè arribaran més eines per a poder sumar i restar al Telegram!"""
     textMess2 = """Instruccions disponibles:
-        - /start: inicialitzar el bot i tornar a rebre això.
-        - /help: informació i ajuda per a enviar i rebre missatges
-        - /msg: enviar un missatge a un altre grup
-        - /addAlias: afegir un àlies per a un grup perquè s'hi puguin enviar i rebre missatges.
-        - /rmAlias: eliminar un àlies per a un grup
-        - /lsAlias: veure tots els grups enregistrats i els seus àlies"""
+- /start: inicialitzar el bot i tornar a rebre això.
+- /help: informació i ajuda per a enviar i rebre missatges
+- /msg: enviar un missatge a un altre grup
+- /addAlias: afegir un àlies per a un grup perquè s'hi puguin enviar i rebre missatges.
+- /rmAlias: eliminar un àlies per a un grup
+- /lsAlias: veure tots els grups enregistrats i els seus àlies"""
     
     await context.bot.send_message(chat_id=update.effective_chat.id, text=textMess1)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=textMess2)
