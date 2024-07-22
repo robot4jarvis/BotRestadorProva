@@ -151,7 +151,7 @@ async def msg(update:Update, context: ContextTypes.DEFAULT_TYPE):
     aliesDestinatari = textRebut[0:textRebut.find(" ")].strip() #agafem la primera paraula (el destinatari)
     aliesRemitent = aliasesDict[update.effective_chat.id]
     textRebut = textRebut[textRebut.find(" "):].strip() # Eliminem el destinatari
-    header = "Missatge rebut de {} per a {}: \n\n ".format(str(aliesRemitent[0]), aliesDestinatari)
+    header = "Missatge de {} per a {}: \n\n ".format(str(aliesRemitent[0]), aliesDestinatari)
     foot = "\n\nFirmat: {} el {} a les {}.".format(update.effective_sender.name, now.strftime('%d/%m/%y'), now.strftime('%H:%M:%S'))
     
     textMess = header + textRebut + foot
@@ -170,6 +170,7 @@ if __name__ == '__main__':
     
     with open("TOKEN.txt") as tokenFile:
         token = tokenFile.readline()
+    token = token[1:-1]
 
     app = ApplicationBuilder().token(token).build()
     

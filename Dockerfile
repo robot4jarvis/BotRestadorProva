@@ -1,8 +1,7 @@
-FROM python:3.12.4
+FROM python:3.12.4-slim AS bot
 
 ADD main.py ./
 ADD data.txt ./
 ADD TOKEN.txt ./
 RUN pip install python-telegram-bot --upgrade
-RUN pip install python-telegram-bot unicodedata datetime
 CMD ["python", "./main.py"]
