@@ -178,7 +178,7 @@ async def msg(update:Update, context: ContextTypes.DEFAULT_TYPE):
     # Si tot va bé, "montam" el missatge i l'enviem
     now = datetime.now()
     header = "Missatge de {} per a {}: \n\n ".format(str(aliesRemitent[0]), aliesDestinatari)
-    foot = "\n\nFirmat: {} el {} a les {}.".format(update.effective_sender.name, now.strftime('%d/%m/%y'), now.strftime('%H:%M:%S'))
+    foot = "\n\nFirmat: {} el {} a les {}.".format(update.effective_sender.name, now.strftime('%d/%m/%Y'), now.strftime('%X'))
     textMess = header + cos + foot
     await context.bot.send_message(chat_id=IDestinatari, text = textMess) # Enviem el missatge al destinatari
     await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess) # En qualsevol cas, avissem al remitent
