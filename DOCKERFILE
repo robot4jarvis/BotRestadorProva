@@ -1,0 +1,7 @@
+FROM python:3.12.4
+
+ADD main.py
+ADD data.txt
+ADD TOKEN.txt
+RUN pip install python-telegram-bot logging unicodedata datetime
+CMD ["python", "./main.py"]
