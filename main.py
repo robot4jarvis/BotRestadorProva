@@ -117,24 +117,30 @@ async def addAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
 async def rmAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
     aEliminar = [stripAccents(x.strip().lower()) for x in context.args]
     groupID = update.effective_chat.id
-    if not(groupID in aliasesDict): textMess = "No hi ha cap àlies configurat per a aquest grup."
-    else: 
-        if aEliminar.__len__() < 1: textMess = "No s'han fet canvis. Àlies actuals per a aquest grup\n  - " + "\n  - ".join(aliasesDict[update.effective_chat.id])
-        else:
-            textMess = ""
-            existents = [stripAccents(x.lower()) for x in aliasesDict[groupID]] # obtenim els alias existents per a un grup
-            for paraula in aEliminar:
-                if paraula in existents: 
-                    aliasesDict[groupID].pop(existents.index(paraula))
-                    textMess += "\n - Àlies '" + paraula + "' eliminat."
-                    if aliasesDict[groupID].__len__() < 1:
-                        textMess += "\nJa no queden àlies per a aquest grup"
-                        aliasesDict.pop(groupID)
-                else:
-                    textMess += "\n - Alies '" + paraula + "' no existeix"
-            writeTextFile("data.txt",aliasesDict)
-            textMess += "\nFes servir '/addAlias o /rmAlias sense arguments per a veure la llista d'àlies."
-    print(aliasesDict)
+    if not(groupID in aliasesDict):  # Comprovem si existeixen àlies per al grup actual
+        textMess = "No hi ha cap àlies configurat per a aquest grup."
+        await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
+        return
+    if aEliminar.__len__() < 1: # Comprovem si hi ha algun argument. Si no n'hi ha, retornem la llista d'alies
+        textMess = "No s'han fet canvis. Àlies actuals per a aquest grup\n  - " + "\n  - ".join(aliasesDict[update.effective_chat.id])
+        await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
+        return
+
+    # Ara, amb un loop 'for' mirarem per a cada paraula que s'ha sol·licitat eliminar, si és possible, i si ho és, ho fem i donem el resultat
+    textMess = ""
+    for paraula in aEliminar:
+        existents = [stripAccents(x.lower()) for x in aliasesDict[groupID]] # obtenim els alias existents per a un grup
+        if paraula in existents: # si existeix, la eliminem
+            aliasesDict[groupID].pop(existents.index(paraula))
+            textMess += "\n- Àlies '" + paraula + "' eliminat."
+        else: textMess += "\n- Alies '" + paraula + "' no existeix" #si no, avissem a l'usuari
+    
+    if aliasesDict[groupID].__len__() < 1: #un cop acabats, comprovem si quede algun àlies al grup
+        aliasesDict.pop(groupID)
+        textMess += "\nJa no queden àlies per a aquest grup"
+    
+    writeTextFile("data.txt",aliasesDict)
+    textMess += "\nFes servir '/addAlias o /rmAlias sense arguments per a veure la llista d'àlies."
     await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
 
 async def lsAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
