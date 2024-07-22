@@ -117,9 +117,9 @@ async def addAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
 async def rmAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
     aEliminar = [stripAccents(x.strip().lower()) for x in context.args]
     groupID = update.effective_chat.id
-    if aEliminar.__len__() < 1: messText = "No s'han fet canvis. Àlies actuals per a aquest grup\n  - " + "\n  - ".join(aliasesDict[update.effective_chat.id])
+    if not(groupID in aliasesDict): messText = "No hi ha cap àlies configurat per a aquest grup."
     else: 
-        if not(groupID in aliasesDict): messText = "No hi ha cap àlies configurat per a aquest grup"
+        if aEliminar.__len__() < 1: messText = "No s'han fet canvis. Àlies actuals per a aquest grup\n  - " + "\n  - ".join(aliasesDict[update.effective_chat.id])
         else:
             messText = ""
             existents = [stripAccents(x.lower()) for x in aliasesDict[groupID]] # obtenim els alias existents per a un grup
@@ -145,6 +145,7 @@ async def lsAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text = messText)
 
 async def msg(update:Update, context: ContextTypes.DEFAULT_TYPE):
+    if not(update.effective_chat.id in aliasesDict): messText = "No hi ha cap àlies configurat per a aquest grup.\nAbans d'enviar un missatge, afegeix-ne un amb '/addAlias.\nPer a més informació, fes servir /help."
     now = datetime.now()
     textRebut = update.message.text.strip()
     textRebut = textRebut[textRebut.find(" "):].strip() #Eliminem el comandament
