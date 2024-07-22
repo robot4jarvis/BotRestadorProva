@@ -5,7 +5,7 @@ from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandl
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    level=logging.WARNING
 )
 
 def getGroupID(alias):
@@ -35,6 +35,9 @@ def readTextFile(finName):
             else:
                 dicty[groupID] = list()
                 for x in alias: dicty[groupID].append(x)
+    now = datetime.now()
+    print("{} - {} S'ha llegit l'arxiu '{}' amb èxit".format(now.strftime('%d/%m/%Y'), now.strftime('%X'), finName))
+    print(dicty)
     return dicty
 
 def writeTextFile(foutname, dicty):
@@ -44,6 +47,10 @@ def writeTextFile(foutname, dicty):
         for x in dicty:
             line = str(x) + "," +",".join(dicty[x]) + "\n"
             file.write(line)
+    
+    now = datetime.now()
+    print("{} - {} S'ha actualitzat l'arxiu '{}' amb èxit".format(now.strftime('%d/%m/%Y'), now.strftime('%X'), foutname))
+    print(dicty)
 
 def validAlias(aliasList):
     validList = list()
@@ -55,15 +62,15 @@ def validAlias(aliasList):
         
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     textMess1 = """Hola! Benvingut al SplitBot, el bot restador de proves per a la Telecogresca.
-    Ara per ara, només té una sola funció: enviar missatges directes a altres grups.
-    No obstant, estigueu atents, perquè arribaran més eines per a poder sumar i restar al Telegram!"""
+Ara per ara, només té una sola funció: enviar missatges directes a altres grups.
+No obstant, estigueu atents, perquè arribaran més eines per a poder sumar i restar al Telegram!"""
     textMess2 = """Instruccions disponibles:
-        - /start: inicialitzar el bot i tornar a rebre això.
-        - /help: informació i ajuda per a enviar i rebre missatges
-        - /msg: enviar un missatge a un altre grup
-        - /addAlias: afegir un àlies per a un grup perquè s'hi puguin enviar i rebre missatges.
-        - /rmAlias: eliminar un àlies per a un grup
-        - /lsAlias: veure tots els grups enregistrats i els seus àlies"""
+- /start: inicialitzar el bot i tornar a rebre això.
+- /help: informació i ajuda per a enviar i rebre missatges
+- /msg: enviar un missatge a un altre grup
+- /addAlias: afegir un àlies per a un grup perquè s'hi puguin enviar i rebre missatges.
+- /rmAlias: eliminar un àlies per a un grup
+- /lsAlias: veure tots els grups enregistrats i els seus àlies"""
     
     await context.bot.send_message(chat_id=update.effective_chat.id, text=textMess1)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=textMess2)
@@ -117,59 +124,79 @@ async def addAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
 async def rmAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
     aEliminar = [stripAccents(x.strip().lower()) for x in context.args]
     groupID = update.effective_chat.id
-    if aEliminar.__len__() < 1: messText = "No s'han fet canvis. Àlies actuals per a aquest grup\n  - " + "\n  - ".join(aliasesDict[update.effective_chat.id])
-    else: 
-        if not(groupID in aliasesDict): messText = "No hi ha cap àlies configurat per a aquest grup"
-        else:
-            messText = ""
-            existents = [stripAccents(x.lower()) for x in aliasesDict[groupID]] # obtenim els alias existents per a un grup
-            for paraula in aEliminar:
-                if paraula in existents: 
-                    aliasesDict[groupID].pop(existents.index(paraula))
-                    messText += "\n - Alies '" + paraula + "' eliminat."
-                    if aliasesDict[groupID].__len__() < 1:
-                        messText += "\nJa no queden àlies per a aquest grup"
-                        aliasesDict.pop(groupID)
-                else:
-                    messText += "\n - Alies '" + paraula + "'no existeix"
-            writeTextFile("data.txt",aliasesDict)
-            messText += "\nFes servir '/addAlias o /rmAlias sense arguments per a veure la llista d'àlies."
-    print(aliasesDict)
-    await context.bot.send_message(chat_id=update.effective_chat.id, text = messText)
+    if not(groupID in aliasesDict):  # Comprovem si existeixen àlies per al grup actual
+        textMess = "No hi ha cap àlies configurat per a aquest grup."
+        await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
+        return
+    if aEliminar.__len__() < 1: # Comprovem si hi ha algun argument. Si no n'hi ha, retornem la llista d'alies
+        textMess = "No s'han fet canvis. Àlies actuals per a aquest grup\n  - " + "\n  - ".join(aliasesDict[update.effective_chat.id])
+        await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
+        return
+
+    # Ara, amb un loop 'for' mirarem per a cada paraula que s'ha sol·licitat eliminar, si és possible, i si ho és, ho fem i donem el resultat
+    textMess = ""
+    for paraula in aEliminar:
+        existents = [stripAccents(x.lower()) for x in aliasesDict[groupID]] # obtenim els alias existents per a un grup
+        if paraula in existents: # si existeix, la eliminem
+            aliasesDict[groupID].pop(existents.index(paraula))
+            textMess += "\n- Àlies '" + paraula + "' eliminat."
+        else: textMess += "\n- Alies '" + paraula + "' no existeix" #si no, avissem a l'usuari
+    
+    if aliasesDict[groupID].__len__() < 1: #un cop acabats, comprovem si quede algun àlies al grup
+        aliasesDict.pop(groupID)
+        textMess += "\nJa no queden àlies per a aquest grup"
+    
+    writeTextFile("data.txt",aliasesDict)
+    textMess += "\nFes servir '/addAlias o /rmAlias sense arguments per a veure la llista d'àlies."
+    await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
 
 async def lsAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
-    messText = "Aquests són tots els àlies existents. Fes servir /addAlias o /rmAlias per a afegir-ne o eliminar-ne.\nNomés pots fer-ho des de dintre del grup pertanyent a l'àlies."
+    textMess = "Aquests són tots els àlies existents. Fes servir /addAlias o /rmAlias per a afegir-ne o eliminar-ne.\nNomés pots fer-ho des de dintre del grup pertanyent a l'àlies."
     for x in aliasesDict:
         aliasList =  ", ".join(aliasesDict[x])
-        messText += "\n - " + aliasList
-    await context.bot.send_message(chat_id=update.effective_chat.id, text = messText)
+        textMess += "\n - " + aliasList
+        if update.effective_chat.id == x: textMess += " (grup actual)"
+    if not(update.effective_chat.id in aliasesDict): textMess +="\n El grup actual no té cap àlies."
+    await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
 
 async def msg(update:Update, context: ContextTypes.DEFAULT_TYPE):
-    now = datetime.now()
+    if not(update.effective_chat.id in aliasesDict): # Comprovem que el remitent té un àlies
+        textMess = "No hi ha cap àlies configurat per a aquest grup.\nAbans d'enviar un missatge, afegeix-ne un amb '/addAlias.\nPer a més informació, fes servir /help."
+        await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
+        return # Acabem això
+    if context.args.__len__()<2: # Comprovem que s'ha introduït remitent i missatge
+        textMess = "Format incorrecte. Fes servir:\n   /msg alies text\nsubstituint 'alies' pel destinatari"
+        await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
+        return
+    
+    # Processem el text rebut per a obtenir el cos del missatge i l'àlies del destinatari
     textRebut = update.message.text.strip()
     textRebut = textRebut[textRebut.find(" "):].strip() #Eliminem el comandament
     aliesDestinatari = textRebut[0:textRebut.find(" ")].strip() #agafem la primera paraula (el destinatari)
     aliesRemitent = aliasesDict[update.effective_chat.id]
-    textRebut = textRebut[textRebut.find(" "):].strip() # Eliminem el destinatari
-    header = "Missatge rebut de {} per a {}: \n\n ".format(str(aliesRemitent[0]), aliesDestinatari)
-    foot = "\n\nFirmat: {} el {} a les {}.".format(update.effective_sender.name, now.strftime('%d/%m/%y'), now.strftime('%H:%M:%S'))
-    
-    textMess = header + textRebut + foot
-    
+    cos = textRebut[textRebut.find(" "):].strip() # Eliminem el destinatari, ens queda el cos
+
     IDestinatari = getGroupID(aliesDestinatari)
-    if IDestinatari == -1: textMess = "Aquest àlies no està enregistrat! Fes servir '/lsAlias' per a veure quins existeixen" # Error!
-    else:
-        await context.bot.send_message(chat_id=IDestinatari, text = textMess) # Enviem el missatge al destinatari
+    if IDestinatari == -1: # Comprovem que el destinatari existeix
+        textMess = "Aquest àlies no està enregistrat! Fes servir '/lsAlias' per a veure quins existeixen" # Error!
+        await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
+        return
+    
+    # Si tot va bé, "montam" el missatge i l'enviem
+    now = datetime.now()
+    header = "Missatge de {} per a {}: \n\n ".format(str(aliesRemitent[0]), aliesDestinatari)
+    foot = "\n\nFirmat: {} el {} a les {}.".format(update.effective_sender.name, now.strftime('%d/%m/%Y'), now.strftime('%X'))
+    textMess = header + cos + foot
+    await context.bot.send_message(chat_id=IDestinatari, text = textMess) # Enviem el missatge al destinatari
     await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess) # En qualsevol cas, avissem al remitent
 
     
 if __name__ == '__main__':
     aliasesDict = readTextFile("data.txt")  # Llegim l'arxiu de text per a obtenir tots els àlies
-    print("S'ha llegit el fitxer de dades: ")
-    print(aliasesDict)
     
     with open("TOKEN.txt") as tokenFile:
         token = tokenFile.readline()
+    token = token[1:-1]
 
     app = ApplicationBuilder().token(token).build()
     
@@ -179,7 +206,6 @@ if __name__ == '__main__':
     rmAlias_handler = CommandHandler(['rmAlias','rm', 'delAlias', 'elAlias', 'elAlies','rmAlies','delAlies'], rmAlias)
     lsAlias_handler = CommandHandler(['alias', 'alies','al', 'ls','lsAlias','lsAlies'],lsAlias)
     msg_handler = CommandHandler(['send','msg','ms','mg'],msg)
-
     
     app.add_handler(start_handler)
     app.add_handler(help_handler)
@@ -187,6 +213,8 @@ if __name__ == '__main__':
     app.add_handler(addAlias_handler)
     app.add_handler(lsAlias_handler)
     app.add_handler(msg_handler)
+    
+    print("Applicació iniciada")
 
     
     app.run_polling()
