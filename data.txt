@@ -1,4 +1,3 @@
 GroupID,aliases...
 6136685883,SplitPrivat
--1002205156638,Paris
 -1002214001848,berlin

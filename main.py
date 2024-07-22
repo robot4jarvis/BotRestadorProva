@@ -5,7 +5,7 @@ from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandl
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    level=logging.WARNING
 )
 
 def getGroupID(alias):
@@ -35,6 +35,9 @@ def readTextFile(finName):
             else:
                 dicty[groupID] = list()
                 for x in alias: dicty[groupID].append(x)
+    now = datetime.now()
+    print("{} - {} S'ha llegit l'arxiu '{}' amb èxit".format(now.strftime('%d/%m/%Y'), now.strftime('%X'), finName))
+    print(dicty)
     return dicty
 
 def writeTextFile(foutname, dicty):
@@ -44,6 +47,10 @@ def writeTextFile(foutname, dicty):
         for x in dicty:
             line = str(x) + "," +",".join(dicty[x]) + "\n"
             file.write(line)
+    
+    now = datetime.now()
+    print("{} - {} S'ha actualitzat l'arxiu '{}' amb èxit".format(now.strftime('%d/%m/%Y'), now.strftime('%X'), foutname))
+    print(dicty)
 
 def validAlias(aliasList):
     validList = list()
@@ -186,8 +193,6 @@ async def msg(update:Update, context: ContextTypes.DEFAULT_TYPE):
     
 if __name__ == '__main__':
     aliasesDict = readTextFile("data.txt")  # Llegim l'arxiu de text per a obtenir tots els àlies
-    print("S'ha llegit el fitxer de dades: ")
-    print(aliasesDict)
     
     with open("TOKEN.txt") as tokenFile:
         token = tokenFile.readline()
@@ -201,7 +206,6 @@ if __name__ == '__main__':
     rmAlias_handler = CommandHandler(['rmAlias','rm', 'delAlias', 'elAlias', 'elAlies','rmAlies','delAlies'], rmAlias)
     lsAlias_handler = CommandHandler(['alias', 'alies','al', 'ls','lsAlias','lsAlies'],lsAlias)
     msg_handler = CommandHandler(['send','msg','ms','mg'],msg)
-
     
     app.add_handler(start_handler)
     app.add_handler(help_handler)
@@ -209,6 +213,8 @@ if __name__ == '__main__':
     app.add_handler(addAlias_handler)
     app.add_handler(lsAlias_handler)
     app.add_handler(msg_handler)
+    
+    print("Applicació iniciada")
 
     
     app.run_polling()
