@@ -117,50 +117,57 @@ async def addAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
 async def rmAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
     aEliminar = [stripAccents(x.strip().lower()) for x in context.args]
     groupID = update.effective_chat.id
-    if not(groupID in aliasesDict): messText = "No hi ha cap àlies configurat per a aquest grup."
+    if not(groupID in aliasesDict): textMess = "No hi ha cap àlies configurat per a aquest grup."
     else: 
-        if aEliminar.__len__() < 1: messText = "No s'han fet canvis. Àlies actuals per a aquest grup\n  - " + "\n  - ".join(aliasesDict[update.effective_chat.id])
+        if aEliminar.__len__() < 1: textMess = "No s'han fet canvis. Àlies actuals per a aquest grup\n  - " + "\n  - ".join(aliasesDict[update.effective_chat.id])
         else:
-            messText = ""
+            textMess = ""
             existents = [stripAccents(x.lower()) for x in aliasesDict[groupID]] # obtenim els alias existents per a un grup
             for paraula in aEliminar:
                 if paraula in existents: 
                     aliasesDict[groupID].pop(existents.index(paraula))
-                    messText += "\n - Alies '" + paraula + "' eliminat."
+                    textMess += "\n - Àlies '" + paraula + "' eliminat."
                     if aliasesDict[groupID].__len__() < 1:
-                        messText += "\nJa no queden àlies per a aquest grup"
+                        textMess += "\nJa no queden àlies per a aquest grup"
                         aliasesDict.pop(groupID)
                 else:
-                    messText += "\n - Alies '" + paraula + "'no existeix"
+                    textMess += "\n - Alies '" + paraula + "' no existeix"
             writeTextFile("data.txt",aliasesDict)
-            messText += "\nFes servir '/addAlias o /rmAlias sense arguments per a veure la llista d'àlies."
+            textMess += "\nFes servir '/addAlias o /rmAlias sense arguments per a veure la llista d'àlies."
     print(aliasesDict)
-    await context.bot.send_message(chat_id=update.effective_chat.id, text = messText)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
 
 async def lsAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
-    messText = "Aquests són tots els àlies existents. Fes servir /addAlias o /rmAlias per a afegir-ne o eliminar-ne.\nNomés pots fer-ho des de dintre del grup pertanyent a l'àlies."
+    textMess = "Aquests són tots els àlies existents. Fes servir /addAlias o /rmAlias per a afegir-ne o eliminar-ne.\nNomés pots fer-ho des de dintre del grup pertanyent a l'àlies."
     for x in aliasesDict:
         aliasList =  ", ".join(aliasesDict[x])
-        messText += "\n - " + aliasList
-    await context.bot.send_message(chat_id=update.effective_chat.id, text = messText)
+        textMess += "\n - " + aliasList
+        if update.effective_chat.id == x: textMess += " (grup actual)"
+    if not(update.effective_chat.id in aliasesDict): textMess +="\n El grup actual no té cap àlies."
+    await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
 
 async def msg(update:Update, context: ContextTypes.DEFAULT_TYPE):
-    if not(update.effective_chat.id in aliasesDict): messText = "No hi ha cap àlies configurat per a aquest grup.\nAbans d'enviar un missatge, afegeix-ne un amb '/addAlias.\nPer a més informació, fes servir /help."
-    now = datetime.now()
-    textRebut = update.message.text.strip()
-    textRebut = textRebut[textRebut.find(" "):].strip() #Eliminem el comandament
-    aliesDestinatari = textRebut[0:textRebut.find(" ")].strip() #agafem la primera paraula (el destinatari)
-    aliesRemitent = aliasesDict[update.effective_chat.id]
-    textRebut = textRebut[textRebut.find(" "):].strip() # Eliminem el destinatari
-    header = "Missatge de {} per a {}: \n\n ".format(str(aliesRemitent[0]), aliesDestinatari)
-    foot = "\n\nFirmat: {} el {} a les {}.".format(update.effective_sender.name, now.strftime('%d/%m/%y'), now.strftime('%H:%M:%S'))
-    
-    textMess = header + textRebut + foot
-    
-    IDestinatari = getGroupID(aliesDestinatari)
-    if IDestinatari == -1: textMess = "Aquest àlies no està enregistrat! Fes servir '/lsAlias' per a veure quins existeixen" # Error!
-    else:
-        await context.bot.send_message(chat_id=IDestinatari, text = textMess) # Enviem el missatge al destinatari
+    if not(update.effective_chat.id in aliasesDict): textMess = "No hi ha cap àlies configurat per a aquest grup.\nAbans d'enviar un missatge, afegeix-ne un amb '/addAlias.\nPer a més informació, fes servir /help."
+    else: 
+        if context.args.__len__()<2: textMess = "Format incorrecte. Fes servir:\n   /msg alies text\nsubstituint 'alies' pel destinatari"
+        else:
+            now = datetime.now()
+            textRebut = update.message.text.strip()
+            textRebut = textRebut[textRebut.find(" "):].strip() #Eliminem el comandament
+            aliesDestinatari = textRebut[0:textRebut.find(" ")].strip() #agafem la primera paraula (el destinatari)
+            aliesRemitent = aliasesDict[update.effective_chat.id]
+            textRebut = textRebut[textRebut.find(" "):].strip() # Eliminem el destinatari
+            print(aliesDestinatari)
+            print(textRebut)
+            header = "Missatge de {} per a {}: \n\n ".format(str(aliesRemitent[0]), aliesDestinatari)
+            foot = "\n\nFirmat: {} el {} a les {}.".format(update.effective_sender.name, now.strftime('%d/%m/%y'), now.strftime('%H:%M:%S'))
+            
+            textMess = header + textRebut + foot
+            
+            IDestinatari = getGroupID(aliesDestinatari)
+            if IDestinatari == -1: textMess = "Aquest àlies no està enregistrat! Fes servir '/lsAlias' per a veure quins existeixen" # Error!
+            else:
+                await context.bot.send_message(chat_id=IDestinatari, text = textMess) # Enviem el missatge al destinatari
     await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess) # En qualsevol cas, avissem al remitent
 
     
