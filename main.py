@@ -2,6 +2,7 @@ import logging, unicodedata
 from datetime import datetime
 from telegram import Update
 from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
+from os import environ
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -194,11 +195,12 @@ async def msg(update:Update, context: ContextTypes.DEFAULT_TYPE):
 if __name__ == '__main__':
     aliasesDict = readTextFile("data.txt")  # Llegim l'arxiu de text per a obtenir tots els àlies
     
-    with open("TOKEN.txt") as tokenFile:
-        token = tokenFile.readline()
-    token = token[1:-1]
+    TOKEN = environ.get('BOTTOKEN')
+    #with open("TOKEN.txt") as tokenFile:
+    #    token = tokenFile.readline()
+    #token = token[1:-1]
 
-    app = ApplicationBuilder().token(token).build()
+    app = ApplicationBuilder().token(TOKEN).build()
     
     start_handler = CommandHandler('start', start)
     help_handler = CommandHandler('help', help)
