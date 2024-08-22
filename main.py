@@ -2,7 +2,7 @@ import logging, unicodedata
 from datetime import datetime
 from telegram import Update
 from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
-from os import environ
+from os import environ, system
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -48,6 +48,7 @@ def writeTextFile(foutname, dicty):
         for x in dicty:
             line = str(x) + "," +",".join(dicty[x]) + "\n"
             file.write(line)
+    
     
     now = datetime.now()
     print("{} - {} S'ha actualitzat l'arxiu '{}' amb èxit".format(now.strftime('%d/%m/%Y'), now.strftime('%X'), foutname))
@@ -191,14 +192,20 @@ async def msg(update:Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=IDestinatari, text = textMess) # Enviem el missatge al destinatari
     await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess) # En qualsevol cas, avissem al remitent
 
-    
+async def txt(update:Update, context: ContextTypes.DEFAULT_TYPE):
+    groupID = update.effective_chat.id
+    if groupID != 6136685883:
+        await context.bot.send_message(chat_id = groupID, text = "No pots fer servir aquesta instrucció.")
+        return
+
+    datafile = open("data.txt")
+    await context.bot.send_message(groupID, "Aquí tens a base de dades dels àlies:")
+    await context.bot.send_document(groupID, datafile)
+
 if __name__ == '__main__':
     aliasesDict = readTextFile("data.txt")  # Llegim l'arxiu de text per a obtenir tots els àlies
     
     TOKEN = environ.get('BOTTOKEN')
-    #with open("TOKEN.txt") as tokenFile:
-    #    token = tokenFile.readline()
-    #token = token[1:-1]
 
     app = ApplicationBuilder().token(TOKEN).build()
     
@@ -208,6 +215,7 @@ if __name__ == '__main__':
     rmAlias_handler = CommandHandler(['rmAlias','rm', 'delAlias', 'elAlias', 'elAlies','rmAlies','delAlies'], rmAlias)
     lsAlias_handler = CommandHandler(['alias', 'alies','al', 'ls','lsAlias','lsAlies'],lsAlias)
     msg_handler = CommandHandler(['send','msg','ms','mg'],msg)
+    txt_handler = CommandHandler(['data', 'txt'], txt)
     
     app.add_handler(start_handler)
     app.add_handler(help_handler)
@@ -215,6 +223,7 @@ if __name__ == '__main__':
     app.add_handler(addAlias_handler)
     app.add_handler(lsAlias_handler)
     app.add_handler(msg_handler)
+    app.add_handler(txt_handler)
     
     print("Applicació iniciada")
 
