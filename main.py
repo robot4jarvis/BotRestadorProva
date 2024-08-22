@@ -1,5 +1,4 @@
-import logging, unicodedata
-from datetime import datetime
+import logging, unicodedata, datetime, pytz
 from telegram import Update
 from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from os import environ, system
@@ -36,7 +35,7 @@ def readTextFile(finName):
             else:
                 dicty[groupID] = list()
                 for x in alias: dicty[groupID].append(x)
-    now = datetime.now()
+    now = datetime.datetime.now()
     print("{} - {} S'ha llegit l'arxiu '{}' amb èxit".format(now.strftime('%d/%m/%Y'), now.strftime('%X'), finName))
     print(dicty)
     return dicty
@@ -185,7 +184,7 @@ async def msg(update:Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     # Si tot va bé, "montam" el missatge i l'enviem
-    now = datetime.now()
+    now = datetime.datetime.now()
     header = "Missatge de {} per a {}: \n\n ".format(str(aliesRemitent[0]), aliesDestinatari)
     foot = "\n\nFirmat: {} el {} a les {}.".format(update.effective_sender.name, now.strftime('%d/%m/%Y'), now.strftime('%X'))
     textMess = header + cos + foot
@@ -202,12 +201,18 @@ async def txt(update:Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(groupID, "Aquí tens a base de dades dels àlies:")
     await context.bot.send_document(groupID, datafile)
 
+async def felicitats(context: ContextTypes.DEFAULT_TYPE):
+    print("/felicitatsSplit")
+    await context.bot.send_message(chat_id=6136685883, text = "/felicitatsSplit") # Enviem el missatge al destinatari
+
+    
 if __name__ == '__main__':
     aliasesDict = readTextFile("data.txt")  # Llegim l'arxiu de text per a obtenir tots els àlies
-    
     TOKEN = environ.get('BOTTOKEN')
 
     app = ApplicationBuilder().token(TOKEN).build()
+    job = app.job_queue
+    
     
     start_handler = CommandHandler('start', start)
     help_handler = CommandHandler('help', help)
@@ -225,7 +230,10 @@ if __name__ == '__main__':
     app.add_handler(msg_handler)
     app.add_handler(txt_handler)
     
+    # Es crea la tasca que s'encarrega de felicitar el cumple
+    job.run_daily(felicitats,time=datetime.time(18,7,0,tzinfo=pytz.timezone('Europe/Madrid')))
+
+
     print("Applicació iniciada")
 
-    
-    app.run_polling()
+    app.run_polling(allowed_updates=Update.ALL_TYPES)
