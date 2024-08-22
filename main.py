@@ -1,65 +1,14 @@
-import logging, unicodedata, datetime, pytz
+import logging, datetime, pytz
 from telegram import Update
-from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
-from os import environ, system
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
+from os import environ
+
+from methods import getGroupID, stripAccents, readTextFile, readCumFile, writeTextFile, validAlias
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.WARNING
 )
-
-def getGroupID(alias):
-    alias = stripAccents(alias.lower())
-    for key, val in aliasesDict.items():
-        for paraula in val:
-            paraula = stripAccents(paraula.lower())
-            if paraula.lower() == alias.lower(): return key
-    return -1 # Si no existeix aquest alies
-
-def stripAccents(s):
-   return ''.join(c for c in unicodedata.normalize('NFD', s)
-                  if unicodedata.category(c) != 'Mn')
-   
-def readTextFile(finName):
-    ### Aquesta funció llegeix l'arxiu a finName i retorna un diccionari amb els àlies
-    dicty = dict()
-    with open(finName, "r") as file:
-        file.readline() # Ignorem la primera línia
-        for line in file:
-            line = line.split(",")
-            line = [x.strip() for x in line]
-            groupID = int(line[0].strip())
-            alias = line[1:]
-            if groupID in dicty: # Si la entrada ja existeix al diccionari,
-                print("ALERTA: ID repetida... algú ha editat manualment l'arxiu? Aquesta entrada serà ignorada-> Avisa a IT\n" + line)
-            else:
-                dicty[groupID] = list()
-                for x in alias: dicty[groupID].append(x)
-    now = datetime.datetime.now()
-    print("{} - {} S'ha llegit l'arxiu '{}' amb èxit".format(now.strftime('%d/%m/%Y'), now.strftime('%X'), finName))
-    print(dicty)
-    return dicty
-
-def writeTextFile(foutname, dicty):
-    ### Aquesta funció escriu el diccionari a l'arxiu corresponent
-    with open(foutname, "w") as file:
-        file.write("GroupID,aliases...\n")
-        for x in dicty:
-            line = str(x) + "," +",".join(dicty[x]) + "\n"
-            file.write(line)
-    
-    
-    now = datetime.now()
-    print("{} - {} S'ha actualitzat l'arxiu '{}' amb èxit".format(now.strftime('%d/%m/%Y'), now.strftime('%X'), foutname))
-    print(dicty)
-
-def validAlias(aliasList):
-    validList = list()
-    for paraula in aliasList:
-        if getGroupID(paraula) != -1: continue #evitem duplicats
-        if not paraula.replace("_","").isalnum(): continue #només acceptam caracters alfanumèrics i barres baixes
-        validList.append(paraula)
-    return validList
         
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     textMess1 = """Hola! Benvingut al SplitBot, el bot restador de proves per a la Telecogresca.
@@ -177,7 +126,7 @@ async def msg(update:Update, context: ContextTypes.DEFAULT_TYPE):
     aliesRemitent = aliasesDict[update.effective_chat.id]
     cos = textRebut[textRebut.find(" "):].strip() # Eliminem el destinatari, ens queda el cos
 
-    IDestinatari = getGroupID(aliesDestinatari)
+    IDestinatari = getGroupID(aliesDestinatari, aliasesDict)
     if IDestinatari == -1: # Comprovem que el destinatari existeix
         textMess = "Aquest àlies no està enregistrat! Fes servir '/lsAlias' per a veure quins existeixen" # Error!
         await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
@@ -202,12 +151,17 @@ async def txt(update:Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_document(groupID, datafile)
 
 async def felicitats(context: ContextTypes.DEFAULT_TYPE):
-    print("/felicitatsSplit")
-    await context.bot.send_message(chat_id=6136685883, text = "/felicitatsSplit") # Enviem el missatge al destinatari
-
+    # Primer mirem si avui és el cumple d'algú:
+    GroupID = 6136685883 # A on enviarà el missatge
+    for mote, data in cumplesDict.items():
+        if (data.day == datetime.datetime.today().day) and (data.month == datetime.datetime.today().month):
+            textMess = "/felicitats" + mote.title()
+            await context.bot.send_message(chat_id=GroupID, text = textMess) # Enviem el missatge al destinatari
+    return
     
 if __name__ == '__main__':
     aliasesDict = readTextFile("data.txt")  # Llegim l'arxiu de text per a obtenir tots els àlies
+    cumplesDict = readCumFile("cumples.txt")
     TOKEN = environ.get('BOTTOKEN')
 
     app = ApplicationBuilder().token(TOKEN).build()
@@ -230,8 +184,9 @@ if __name__ == '__main__':
     app.add_handler(msg_handler)
     app.add_handler(txt_handler)
     
-    # Es crea la tasca que s'encarrega de felicitar el cumple
-    job.run_daily(felicitats,time=datetime.time(18,7,0,tzinfo=pytz.timezone('Europe/Madrid')))
+    # Es crea la tasca que s'encarrega de felicitar els cumples
+    job.run_daily(felicitats,time=datetime.time(19,6,40,tzinfo=pytz.timezone('Europe/Madrid')))
+    
 
 
     print("Applicació iniciada")
