@@ -185,7 +185,7 @@ if __name__ == '__main__':
     app.add_handler(txt_handler)
     
     # Es crea la tasca que s'encarrega de felicitar els cumples
-    job.run_daily(felicitats,time=datetime.time(19,6,40,tzinfo=pytz.timezone('Europe/Madrid')))
+    job.run_daily(felicitats,time=datetime.time(19,15,00,tzinfo=pytz.timezone('Europe/Madrid')))
     
 
 

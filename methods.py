@@ -12,7 +12,7 @@ def getGroupID(alias, dicty):
 def stripAccents(s):
    return ''.join(c for c in unicodedata.normalize('NFD', s)
                   if unicodedata.category(c) != 'Mn')
-   
+
    
 def readTextFile(finName):
     ### Aquesta funció llegeix l'arxiu a finName i retorna un diccionari amb els àlies
