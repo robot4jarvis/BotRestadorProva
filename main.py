@@ -1,4 +1,4 @@
-import logging, datetime, pytz
+import logging, datetime, pytz, random
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from os import environ
@@ -152,13 +152,15 @@ async def txt(update:Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def felicitats(context: ContextTypes.DEFAULT_TYPE):
     # Primer mirem si avui és el cumple d'algú:
+    now = datetime.datetime.now()
     GroupID = 6136685883 # A on enviarà el missatge
     for mote, data in cumplesDict.items():
         if (data.day == datetime.datetime.today().day) and (data.month == datetime.datetime.today().month):
             textMess = "/felicitats" + mote.title()
             await context.bot.send_message(chat_id=GroupID, text = textMess) # Enviem el missatge al destinatari
+            print(textMess + " " + now.strftime('%X')) #per a loggetjar
     return
-    
+
 if __name__ == '__main__':
     aliasesDict = readTextFile("data.txt")  # Llegim l'arxiu de text per a obtenir tots els àlies
     cumplesDict = readCumFile("cumples.txt")
@@ -185,7 +187,7 @@ if __name__ == '__main__':
     app.add_handler(txt_handler)
     
     # Es crea la tasca que s'encarrega de felicitar els cumples
-    job.run_daily(felicitats,time=datetime.time(19,15,00,tzinfo=pytz.timezone('Europe/Madrid')))
+    job.run_daily(felicitats,time=datetime.time(00,00,59,tzinfo=pytz.timezone('Europe/Madrid')))
     
 
 
