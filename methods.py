@@ -1,6 +1,5 @@
 import unicodedata, datetime
 
-
 def getGroupID(alias, dicty):
     alias = stripAccents(alias.lower())
     for key, val in dicty.items():
@@ -34,21 +33,21 @@ def readTextFile(finName):
     print(dicty)
     return dicty
 
-def writeTextFile(foutname, dicty):
+def writeAliasTXT(foutname, dicty):
     ### Aquesta funció escriu el diccionari a l'arxiu corresponent
     with open(foutname, "w") as file:
         file.write("GroupID,aliases...\n")
         for x in dicty:
             line = str(x) + "," +",".join(dicty[x]) + "\n"
             file.write(line)
-    now = datetime.now()
+    now = datetime.datetime.now()
     print("{} - {} S'ha actualitzat l'arxiu '{}' amb èxit".format(now.strftime('%d/%m/%Y'), now.strftime('%X'), foutname))
     print(dicty)
 
-def validAlias(aliasList):
+def validAlias(aliasList, dicty):
     validList = list()
     for paraula in aliasList:
-        if getGroupID(paraula) != -1: continue #evitem duplicats
+        if getGroupID(paraula, dicty) != -1: continue #evitem duplicats
         if not paraula.replace("_","").isalnum(): continue #només acceptam caracters alfanumèrics i barres baixes
         validList.append(paraula)
     return validList

@@ -3,7 +3,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 from os import environ
 
-from methods import getGroupID, stripAccents, readTextFile, readCumFile, writeTextFile, validAlias
+from methods import getGroupID, stripAccents, readTextFile, readCumFile, writeAliasTXT, validAlias
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -58,7 +58,7 @@ I s'enviarà el missatge inmediatament, amb la data i la firma de la persona que
 async def addAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
     # Afegeix un o molts àlies al diccionari i al .txt
     alias = [x.strip() for x in context.args] # Agafa els àlies i elimina espais, caràcters ocults i demés
-    alias = validAlias(alias) # Comprova que no està repetit ni té caràcters estranys.
+    alias = validAlias(alias, aliasesDict) # Comprova que no està repetit ni té caràcters estranys.
     groupID = update.effective_chat.id
     if alias.__len__() < 1: # Si no hi ha àlies vàlids.
         if groupID in aliasesDict: messText = "Els àlies que has especificats estan duplicats o no són vàlids. Àlies actuals per a aquest grup\n  - " + "\n  - ".join(aliasesDict[update.effective_chat.id])
@@ -70,7 +70,7 @@ async def addAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
             aliasesDict[groupID] = list() # Creem l'entrada al diccionari
             aliasesDict[groupID].extend(alias) #afegim els àlies
         messText = "Afegit un àlies. Àlies actuals per a aquest grup\n  - " + "\n  - ".join(aliasesDict[update.effective_chat.id])
-    writeTextFile("data.txt",aliasesDict) # Escrivim al .txt
+        writeAliasTXT("data.txt",aliasesDict) # Escrivim al .txt
     print(aliasesDict)
     await context.bot.send_message(chat_id=update.effective_chat.id, text = messText)
 
@@ -101,7 +101,7 @@ async def rmAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
         aliasesDict.pop(groupID) # Per evitar guardar IDs de grup sense àlies associats, eliminarem el grup del registre.
         textMess += "\nJa no queden àlies per a aquest grup."
     
-    writeTextFile("data.txt",aliasesDict) # Escrivim al .txt.
+    writeAliasTXT("data.txt",aliasesDict) # Escrivim al .txt.
     textMess += "\nFes servir '/addAlias o /rmAlias sense arguments per a veure la llista d'àlies."
     await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
 
@@ -191,6 +191,7 @@ async def sendMess(context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=job.chat_id, text = job.data)
     
 if __name__ == '__main__':
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     aliasesDict = readTextFile("data.txt")  # Llegim l'arxiu de text per a obtenir tots els àlies
     cumplesDict = readCumFile("cumples.txt")
     TOKEN = environ.get('BOTTOKEN')
