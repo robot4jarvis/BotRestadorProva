@@ -7,10 +7,11 @@ from methods import getGroupID, stripAccents, readTextFile, readCumFile, writeTe
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.WARNING
+    level=logging.INFO
 )
         
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Dóna informació. És tot una parrafada
     textMess1 = """Hola! Benvingut al SplitBot, el bot restador de proves per a la Telecogresca.
 Ara per ara, només té una sola funció: enviar missatges directes a altres grups.
 No obstant, estigueu atents, perquè arribaran més eines per a poder sumar i restar al Telegram!"""
@@ -26,6 +27,7 @@ No obstant, estigueu atents, perquè arribaran més eines per a poder sumar i re
     await context.bot.send_message(chat_id=update.effective_chat.id, text=textMess2)
 
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    #Igual que l'anterior però amb més parrafada
     textMess1 = """Hola! Per a poder enviar o rebre missatges amb el bot, abans necessites complir uns requisits:
 1. El bot ha d'estar teu grup, i ser administrador. Basta amb que el bot tingui 1 poder d'admin i que aparegui al llistat d'admins. Això és un requisit de Telegram per als bots.
 2. El teu grup ha de tenir, com a mínim, un sol àlies. Els àlies són com el nom d'usuari del teu grup. Per exemple, el grup d'IT té d'àlies "IT".
@@ -54,28 +56,30 @@ I s'enviarà el missatge inmediatament, amb la data i la firma de la persona que
     await context.bot.send_message(chat_id=update.effective_chat.id, text=textMess3)
              
 async def addAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
-    alias = [x.strip() for x in context.args]
-    alias = validAlias(alias)
+    # Afegeix un o molts àlies al diccionari i al .txt
+    alias = [x.strip() for x in context.args] # Agafa els àlies i elimina espais, caràcters ocults i demés
+    alias = validAlias(alias) # Comprova que no està repetit ni té caràcters estranys.
     groupID = update.effective_chat.id
-    if alias.__len__() < 1:
-        if groupID in aliasesDict: messText = "No s'han fet canvis. Àlies actuals per a aquest grup\n  - " + "\n  - ".join(aliasesDict[update.effective_chat.id])
-        else: messText = "No hi ha àlies configurats per a aquest grup. Usa '/addAlias alias' per a afegir un àlies."
-    else:
+    if alias.__len__() < 1: # Si no hi ha àlies vàlids.
+        if groupID in aliasesDict: messText = "Els àlies que has especificats estan duplicats o no són vàlids. Àlies actuals per a aquest grup\n  - " + "\n  - ".join(aliasesDict[update.effective_chat.id])
+        else: messText = "Els àlies que has especificats estan duplicats o no són vàlids. Fes '/addAlias alias' per a afegir un àlies."
+    else: # Si sí que tenim àlies vàlids
         if groupID in aliasesDict: #Si ja existeix aquest grup:
-            aliasesDict[groupID].extend(alias)
+            aliasesDict[groupID].extend(alias) # Afegim els àlies
         else: #si no, la cream
-            aliasesDict[groupID] = list()
-            aliasesDict[groupID].extend(alias)
+            aliasesDict[groupID] = list() # Creem l'entrada al diccionari
+            aliasesDict[groupID].extend(alias) #afegim els àlies
         messText = "Afegit un àlies. Àlies actuals per a aquest grup\n  - " + "\n  - ".join(aliasesDict[update.effective_chat.id])
-    writeTextFile("data.txt",aliasesDict)
+    writeTextFile("data.txt",aliasesDict) # Escrivim al .txt
     print(aliasesDict)
     await context.bot.send_message(chat_id=update.effective_chat.id, text = messText)
 
 async def rmAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
-    aEliminar = [stripAccents(x.strip().lower()) for x in context.args]
+    # Per a eliminar un o variis àlies
+    aEliminar = [stripAccents(x.strip().lower()) for x in context.args] # posem tots els àlies a eliminar en minúscula, sense accents, espais, etc.
     groupID = update.effective_chat.id
     if not(groupID in aliasesDict):  # Comprovem si existeixen àlies per al grup actual
-        textMess = "No hi ha cap àlies configurat per a aquest grup."
+        textMess = "No hi ha cap àlies configurat per a aquest grup. No s'ha pogut eliminar res."
         await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
         return
     if aEliminar.__len__() < 1: # Comprovem si hi ha algun argument. Si no n'hi ha, retornem la llista d'alies
@@ -83,6 +87,7 @@ async def rmAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
         return
 
+    # Si hem arribat fins aquí, vol dir que hi ha àlies vàlids per a eliminar
     # Ara, amb un loop 'for' mirarem per a cada paraula que s'ha sol·licitat eliminar, si és possible, i si ho és, ho fem i donem el resultat
     textMess = ""
     for paraula in aEliminar:
@@ -90,17 +95,18 @@ async def rmAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
         if paraula in existents: # si existeix, la eliminem
             aliasesDict[groupID].pop(existents.index(paraula))
             textMess += "\n- Àlies '" + paraula + "' eliminat."
-        else: textMess += "\n- Alies '" + paraula + "' no existeix" #si no, avissem a l'usuari
+        else: textMess += "\n- Alies '" + paraula + "' no existeix" #si no, avissam a l'usuari
     
-    if aliasesDict[groupID].__len__() < 1: #un cop acabats, comprovem si quede algun àlies al grup
-        aliasesDict.pop(groupID)
-        textMess += "\nJa no queden àlies per a aquest grup"
+    if aliasesDict[groupID].__len__() < 1: #un cop acabats, comprovem si queda algun àlies al grup, per a avissar a l'usuari.
+        aliasesDict.pop(groupID) # Per evitar guardar IDs de grup sense àlies associats, eliminarem el grup del registre.
+        textMess += "\nJa no queden àlies per a aquest grup."
     
-    writeTextFile("data.txt",aliasesDict)
+    writeTextFile("data.txt",aliasesDict) # Escrivim al .txt.
     textMess += "\nFes servir '/addAlias o /rmAlias sense arguments per a veure la llista d'àlies."
     await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess)
 
 async def lsAlias(update:Update, context: ContextTypes.DEFAULT_TYPE):
+    # Instrucció per a veure tots els àlies disponibles al bot.
     textMess = "Aquests són tots els àlies existents. Fes servir /addAlias o /rmAlias per a afegir-ne o eliminar-ne.\nNomés pots fer-ho des de dintre del grup pertanyent a l'àlies."
     for x in aliasesDict:
         aliasList =  ", ".join(aliasesDict[x])
@@ -141,6 +147,7 @@ async def msg(update:Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text = textMess) # En qualsevol cas, avissem al remitent
 
 async def txt(update:Update, context: ContextTypes.DEFAULT_TYPE):
+    # Instrucció per a recuperar ràpidament el fitxer amb tots els àlies i IDs de grup.
     groupID = update.effective_chat.id
     if groupID != 6136685883:
         await context.bot.send_message(chat_id = groupID, text = "No pots fer servir aquesta instrucció.")
@@ -150,17 +157,39 @@ async def txt(update:Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(groupID, "Aquí tens a base de dades dels àlies:")
     await context.bot.send_document(groupID, datafile)
 
-async def felicitats(context: ContextTypes.DEFAULT_TYPE):
-    # Primer mirem si avui és el cumple d'algú:
-    now = datetime.datetime.now()
-    GroupID = 6136685883 # A on enviarà el missatge
+async def programadorRestades(context: ContextTypes.DEFAULT_TYPE):
+    # Programa les restades del dia.
+    GroupID = 6136685883 # Grup on s'enviaran les restades
+    now = datetime.datetime.now(tz=pytz.timezone('Europe/Madrid'))
+    print("{} - {}: Programant restades".format(now.strftime('%d/%m/%Y'), now.strftime('%X')))
+
+    # Felicitem els cumples d'avui:
     for mote, data in cumplesDict.items():
-        if (data.day == datetime.datetime.today().day) and (data.month == datetime.datetime.today().month):
+        if (data.day == now.day) and (data.month == now.month): # Si algú va néixer tal dia com avui
             textMess = "/felicitats" + mote.title()
             await context.bot.send_message(chat_id=GroupID, text = textMess) # Enviem el missatge al destinatari
-            print(textMess + " " + now.strftime('%X')) #per a loggetjar
+            print("{} - {}:  Enviat [{}] al grup {}".format(now.strftime('%d/%m/%Y'), now.strftime('%X'), textMess, GroupID))
+    
+       
+    # Programem les restades random
+    # Com no són moltes, les definim totes en aquest diccionari. El nombre que s'ha d'indicar és la prob. diària d'emetre el missatge.
+            # - 1 cop al dia: 1                      - 1 cop al mes: 0.03
+            # - 1 cop a la setmana: 0.15             - 1 cop a l'any: 0.003    
+    
+    randRestDict = {"/felicitatsArturito": 0.015, "/felicitatsLluop": 0.003, "CUUUUUUM":0.001}
+    for textMess, prob in randRestDict.items():
+        if random.random()<=prob:
+            timeDelta = random.random()*23.8*3600  # Escollim un moment en les pròximes 24h
+            job.run_once(sendMess, when=timeDelta,chat_id=GroupID, data= textMess)
     return
 
+# Funció que serveix per a programar missatges genèrics. Només funciona dins d'una "job". 
+async def sendMess(context: ContextTypes.DEFAULT_TYPE):
+    job = context.job
+    now = datetime.datetime.now(tz=pytz.timezone('Europe/Madrid'))
+    print("{} - {}:  Enviat [{}] al grup {}".format(now.strftime('%d/%m/%Y'), now.strftime('%X'), job.data,job.chat_id))
+    await context.bot.send_message(chat_id=job.chat_id, text = job.data)
+    
 if __name__ == '__main__':
     aliasesDict = readTextFile("data.txt")  # Llegim l'arxiu de text per a obtenir tots els àlies
     cumplesDict = readCumFile("cumples.txt")
@@ -187,8 +216,7 @@ if __name__ == '__main__':
     app.add_handler(txt_handler)
     
     # Es crea la tasca que s'encarrega de felicitar els cumples
-    job.run_daily(felicitats,time=datetime.time(00,00,59,tzinfo=pytz.timezone('Europe/Madrid')))
-    
+    job.run_daily(programadorRestades,time=datetime.time(00,00,35,tzinfo=pytz.timezone('Europe/Madrid')))
 
 
     print("Applicació iniciada")
