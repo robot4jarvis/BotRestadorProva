@@ -7,7 +7,8 @@ from methods import getGroupID, stripAccents, readTextFile, readCumFile, writeAl
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    level=logging.INFO,
+    filename="./log.log"
 )
         
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
